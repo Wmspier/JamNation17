@@ -19,15 +19,7 @@ public class PlayerBlizzardBehavior : MonoBehaviour {
         mMeshRenderer = gameObject.GetComponent<MeshRenderer> ();
     }
 
-    void Update ()
-    {
-        //DEBUG//
-        if (Input.GetKeyDown (KeyCode.B))
-        {
-            ToggleAttach ();
-        }
-    }
-
+    //Toggle attach state if climbing
     public void TestAttach ()
     {
         if (mClimbBehavior.isClimbing ())
@@ -51,12 +43,15 @@ public class PlayerBlizzardBehavior : MonoBehaviour {
             mClimbBehavior.FreezeClimbing ();
         }
 
-        mClimbBehavior.enabled = mAttached;
+        mClimbBehavior.ToggleGravity(true);
+        mClimbBehavior.setEnabled(mAttached);
     }
 
+    //Similar to ToggleAttach but explicitly ENABLES
     public void AllowClimb()
     { 
-            mMeshRenderer.material = _AttachedMaterial;
-        mClimbBehavior.enabled = true;
+        mMeshRenderer.material = _AttachedMaterial;
+        mClimbBehavior.setEnabled(true);
+        mClimbBehavior.ToggleGravity(false);
     }
 }
