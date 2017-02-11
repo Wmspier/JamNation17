@@ -17,7 +17,6 @@ public class PlayerBlizzardBehavior : MonoBehaviour {
     {
         mClimbBehavior = gameObject.GetComponent<PlayerClimbBehavior> ();
         mMeshRenderer = gameObject.GetComponent<MeshRenderer> ();
-        mBlizzard = GameObject.FindGameObjectWithTag("Blizzard").GetComponent<BlizzardBehavior>();
     }
 
     void Update ()

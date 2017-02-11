@@ -26,10 +26,6 @@ public class BlizzardBehavior : MonoBehaviour {
     private GameObject [] mPlayerList;
     private bool mEnabled;
 
-    void Awake()
-    {
-        gameObject.tag = "Blizzard";
-    }
 	// Use this for initialization
 	void Start () {
         mPlayerList = GameObject.FindGameObjectsWithTag ("Player");
