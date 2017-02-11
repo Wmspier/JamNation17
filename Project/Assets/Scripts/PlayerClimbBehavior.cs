@@ -135,6 +135,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
                 mClimbLerpStartPosition = mTransform.position;
                 mClimbLerpStart = Time.time;
                 mClimbing = true;
+                ToggleGravity(false);
             }
 
             //Player is Climbing -- Lerp the position between the start and end points
@@ -151,8 +152,8 @@ public class PlayerClimbBehavior : MonoBehaviour {
                     mClimbDelayTimer = 0f;
                     mCanClimb = false;
                     mFocusedClimbNode = FindNextClimbNode();
-                    //mJoint.connectedBody = mFocusedClimbNode.GetComponent<Rigidbody>();
-                    mJoint.anchor = mFocusedClimbNode.GetComponent<Transform>().position;
+                    mJoint.connectedBody = mFocusedClimbNode.GetComponent<Rigidbody>();
+                    //mJoint.anchor = mFocusedClimbNode.GetComponent<Transform>().position;
                 }
             }
 
