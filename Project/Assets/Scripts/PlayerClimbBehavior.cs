@@ -30,6 +30,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
     private float mGroundY;
 
     private PlayerSpotLightBehavior mSpotLightBehavior;
+    private SpringJoint mJoint;
 
     //Getters/Setters
     public bool isClimbing () { return mClimbing; }
@@ -40,8 +41,9 @@ public class PlayerClimbBehavior : MonoBehaviour {
         gameObject.tag = "Player";
         mGroundY = GameObject.FindGameObjectWithTag("Ground").GetComponent<Transform>().position.y;
         mSpotLightBehavior = gameObject.GetComponent<PlayerSpotLightBehavior>();
+        mJoint = gameObject.GetComponent<SpringJoint>();
         mTransform = gameObject.GetComponent<Transform> ();
-        mRigidBody = gameObject.GetComponent<Rigidbody> ();
+        mRigidBody = gameObject.GetComponent<Rigidbody>();
 	}
 
     void Start()
@@ -149,8 +151,13 @@ public class PlayerClimbBehavior : MonoBehaviour {
                     mClimbDelayTimer = 0f;
                     mCanClimb = false;
                     mFocusedClimbNode = FindNextClimbNode();
+                    //mJoint.connectedBody = mFocusedClimbNode.GetComponent<Rigidbody>();
+                    mJoint.anchor = mFocusedClimbNode.GetComponent<Transform>().position;
                 }
             }
+
+            Debug.DrawLine(mTransform.position, mFocusedClimbNode.GetComponent<Transform>().position,Color.red);
+
         }
       
         //Stop the Player from following through the ground plane
@@ -159,8 +166,10 @@ public class PlayerClimbBehavior : MonoBehaviour {
             mRigidBody.velocity = Vector3.zero;
             ToggleGravity(false);
             mSpotLightBehavior.AllowClimb();
-            mFocusedClimbNode = FindClosestClimbNode(mTransform.position);
-            mFocusedClimbNodeIndex = FindClimbNodeIndex(mFocusedClimbNode);
+            //mFocusedClimbNode = FindClosestClimbNode(mTransform.position);
+            //mFocusedClimbNodeIndex = FindClimbNodeIndex(mFocusedClimbNode);
+            //mJoint.connectedBody = mFocusedClimbNode.GetComponent<Rigidbody>();
+            //mJoint.anchor = mFocusedClimbNode.GetComponent<Transform>().position;
         }
 	}
 

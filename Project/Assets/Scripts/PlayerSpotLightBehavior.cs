@@ -15,6 +15,14 @@ public class PlayerSpotLightBehavior : MonoBehaviour
     public Material _AttachedMaterial;
     public Material _DetachedMaterial;
 
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            ToggleAttach();
+        }    
+    }
+
     void Start()
     {
         mClimbBehavior = gameObject.GetComponent<PlayerClimbBehavior>();
@@ -40,7 +48,7 @@ public class PlayerSpotLightBehavior : MonoBehaviour
     //Toggle attach state if climbing
     public void TestAttach()
     {
-        if (IsWithinLight())
+        if (IsWithinLight() && mClimbBehavior.isClimbing())
         {
             ToggleAttach();
         }
