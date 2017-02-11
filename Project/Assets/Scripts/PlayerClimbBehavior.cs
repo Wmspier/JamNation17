@@ -8,6 +8,8 @@ public class PlayerClimbBehavior : MonoBehaviour {
     public float _MaxSpeed = 0;
     public float _ClimbDelay = 1.0f;
     public float _LerpSpeed = 1.0f;
+    public KeyCode _ClimbKey;
+    public GameObject _AttachedPlayer;
 
     private Transform mTransform;
     private Rigidbody mRigidBody;
@@ -30,7 +32,6 @@ public class PlayerClimbBehavior : MonoBehaviour {
     private float mGroundY;
 
     private PlayerSpotLightBehavior mSpotLightBehavior;
-    private SpringJoint mJoint;
 
     //Getters/Setters
     public bool isClimbing () { return mClimbing; }
@@ -41,14 +42,14 @@ public class PlayerClimbBehavior : MonoBehaviour {
         gameObject.tag = "Player";
         mGroundY = GameObject.FindGameObjectWithTag("Ground").GetComponent<Transform>().position.y;
         mSpotLightBehavior = gameObject.GetComponent<PlayerSpotLightBehavior>();
-        mJoint = gameObject.GetComponent<SpringJoint>();
         mTransform = gameObject.GetComponent<Transform> ();
         mRigidBody = gameObject.GetComponent<Rigidbody>();
 	}
 
     void Start()
     {
-        InitializeClimbingNodeList(); 
+        InitializeClimbingNodeList();
+        //if (_AttachedPlayer) mJoint.connectedBody = _AttachedPlayer.GetComponent<Rigidbody>();
     }
 
     void InitializeClimbingNodeList()
@@ -128,7 +129,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
             }
 
             //Climb input is held and the play can climb --- Set the end position and begin the Lerp Timer
-            if (Input.GetKey(KeyCode.Space) && mCanClimb && !mClimbing)
+            if (Input.GetKey(_ClimbKey) && mCanClimb && !mClimbing)
             {
                 mClimbLerpEndPosition = FindClimbPosition();
                 mClimbLerpDistance = Vector3.Distance(mTransform.position, mClimbLerpEndPosition);
@@ -152,12 +153,10 @@ public class PlayerClimbBehavior : MonoBehaviour {
                     mClimbDelayTimer = 0f;
                     mCanClimb = false;
                     mFocusedClimbNode = FindNextClimbNode();
-                    mJoint.connectedBody = mFocusedClimbNode.GetComponent<Rigidbody>();
-                    //mJoint.anchor = mFocusedClimbNode.GetComponent<Transform>().position;
                 }
             }
 
-            Debug.DrawLine(mTransform.position, mFocusedClimbNode.GetComponent<Transform>().position,Color.red);
+            if(_AttachedPlayer)Debug.DrawLine(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position,Color.red);
 
         }
       

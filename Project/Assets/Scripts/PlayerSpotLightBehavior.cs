@@ -8,6 +8,7 @@ public class PlayerSpotLightBehavior : MonoBehaviour
     //Is the player holding on to the building
     private bool mAttached;
     private PlayerClimbBehavior mClimbBehavior;
+    private Rigidbody mRigidBody;
     private MeshRenderer mMeshRenderer;
     private Light mSpotLight;
     private Transform mTransform;
@@ -28,6 +29,7 @@ public class PlayerSpotLightBehavior : MonoBehaviour
         mClimbBehavior = gameObject.GetComponent<PlayerClimbBehavior>();
         mMeshRenderer = gameObject.GetComponent<MeshRenderer>();
         mTransform = gameObject.GetComponent<Transform>();
+        mRigidBody = gameObject.GetComponent<Rigidbody>();
         mSpotLight = GameObject.FindGameObjectWithTag("SpotLight").GetComponent<Light>();
     }
 
@@ -62,10 +64,12 @@ public class PlayerSpotLightBehavior : MonoBehaviour
         if (mAttached)
         {
             mMeshRenderer.material = _AttachedMaterial;
+            //mRigidBody.isKinematic = false;
         }
         else
         {
             mMeshRenderer.material = _DetachedMaterial;
+            //mRigidBody.isKinematic = true;
             mClimbBehavior.FreezeClimbing();
         }
 
