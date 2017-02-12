@@ -8,6 +8,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
     public float _MaxSpeed = 0;
     public float _ClimbDelay = 1.0f;
     public float _LerpSpeed = 1.0f;
+    public float _RopeLength = 5.0f;
     public KeyCode _ClimbKey;
     public GameObject _AttachedPlayer;
 
@@ -32,10 +33,12 @@ public class PlayerClimbBehavior : MonoBehaviour {
     private float mGroundY;
 
     private PlayerSpotLightBehavior mSpotLightBehavior;
+    private ScoringBehavior mScoringBehavior;
 
     //Getters/Setters
     public bool isClimbing () { return mClimbing; }
     public void setEnabled(bool state) { mEnabled = state; }
+    public bool isEnabled() { return mEnabled; }
 
 	// Use this for initialization
 	void Awake () {
@@ -49,7 +52,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
     void Start()
     {
         InitializeClimbingNodeList();
-        //if (_AttachedPlayer) mJoint.connectedBody = _AttachedPlayer.GetComponent<Rigidbody>();
+        mScoringBehavior = FindObjectOfType<ScoringBehavior>();
     }
 
     void InitializeClimbingNodeList()
@@ -75,6 +78,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
         if (mFocusedClimbNodeIndex == mTotalClimbNodes)
         {
             mReachedTop = true;
+            mScoringBehavior.PlayerReachedTop();
             return mClimbNodeList[mTotalClimbNodes];
         }
         else 
@@ -116,8 +120,8 @@ public class PlayerClimbBehavior : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 
-        if (mEnabled && !mReachedTop) 
-        {  
+        if (mEnabled && !mReachedTop)
+        {
             //Player is waiting to climb -- Increment the timer
             if (!mCanClimb)
             {
@@ -156,22 +160,43 @@ public class PlayerClimbBehavior : MonoBehaviour {
                 }
             }
 
-            if(_AttachedPlayer)Debug.DrawLine(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position,Color.red);
+            if (_AttachedPlayer) Debug.DrawLine(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position, Color.red);
 
         }
-      
-        //Stop the Player from following through the ground plane
-        if (mTransform.position.y <= mGroundY) 
+        else
         {
-            mRigidBody.velocity = Vector3.zero;
-            ToggleGravity(false);
-            mSpotLightBehavior.AllowClimb();
-            //mFocusedClimbNode = FindClosestClimbNode(mTransform.position);
-            //mFocusedClimbNodeIndex = FindClimbNodeIndex(mFocusedClimbNode);
-            //mJoint.connectedBody = mFocusedClimbNode.GetComponent<Rigidbody>();
-            //mJoint.anchor = mFocusedClimbNode.GetComponent<Transform>().position;
-        }
+            /// Anything within this else takes place when the Player is falling ///
+
+            /// //Stop the Player from following through the ground plane
+            if (mTransform.position.y <= mGroundY)
+            {
+                ToggleGravity(false);
+                mSpotLightBehavior.AllowClimb();
+                mFocusedClimbNode = mClimbNodeList[0];
+                mFocusedClimbNodeIndex = FindClimbNodeIndex(mFocusedClimbNode);
+                mRigidBody.velocity = Vector3.zero;
+            }
+            if (mTransform.position.y < _AttachedPlayer.GetComponent<Transform>().position.y && mRigidBody.velocity.y < 0)
+            {
+                AttachRope();
+            }
+
+
+         }
 	}
+
+    void AttachRope()
+    {
+        //Debug.Log("ATTACHING A FAKE ROPE");
+        //SpringJoint spring = gameObject.AddComponent<SpringJoint>();
+        //spring.connectedBody = _AttachedPlayer.GetComponent<Rigidbody>();
+        float verticalDistance = mTransform.position.y - _AttachedPlayer.GetComponent<Transform>().position.y;
+        if (verticalDistance >= _RopeLength) 
+        {
+            //Debug.Log("FREEZING POSITION Y");
+            mRigidBody.constraints = RigidbodyConstraints.FreezePositionY;
+        }
+    }
 
     //Reset the climbing state so when the player 're-attaches' it doesn't jump to the end of the lerp
     public void FreezeClimbing ()

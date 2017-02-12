@@ -6,7 +6,7 @@ public class PlayerSpotLightBehavior : MonoBehaviour
 {
 
     //Is the player holding on to the building
-    private bool mAttached;
+    private bool mAttached=true;
     private PlayerClimbBehavior mClimbBehavior;
     private Rigidbody mRigidBody;
     private MeshRenderer mMeshRenderer;
@@ -18,7 +18,7 @@ public class PlayerSpotLightBehavior : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.B))
+        if (Input.GetKeyDown(KeyCode.B) && mClimbBehavior.isEnabled())
         {
             ToggleAttach();
         }    
