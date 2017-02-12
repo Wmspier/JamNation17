@@ -16,9 +16,11 @@ public class PlayerSpotLightBehavior : MonoBehaviour
     public Material _AttachedMaterial;
     public Material _DetachedMaterial;
 
+    public KeyCode _DropKey;
+
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.B) && mClimbBehavior.isEnabled())
+        if (Input.GetKeyDown(_DropKey))
         {
             ToggleAttach();
         }    
@@ -64,16 +66,15 @@ public class PlayerSpotLightBehavior : MonoBehaviour
         if (mAttached)
         {
             mMeshRenderer.material = _AttachedMaterial;
-            //mRigidBody.isKinematic = false;
+            mClimbBehavior.ToggleGravity(false);
         }
         else
         {
+            Debug.Log("IT HAPPENED");
             mMeshRenderer.material = _DetachedMaterial;
-            //mRigidBody.isKinematic = true;
+            mClimbBehavior.ToggleGravity(true);
             mClimbBehavior.FreezeClimbing();
         }
-
-        mClimbBehavior.ToggleGravity(true);
         mClimbBehavior.setEnabled(mAttached);
     }
 

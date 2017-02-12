@@ -9,6 +9,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
     public float _ClimbDelay = 1.0f;
     public float _LerpSpeed = 1.0f;
     public float _RopeLength = 5.0f;
+    public float _RopeMargin = 5.0f;
     public KeyCode _ClimbKey;
     public GameObject _AttachedPlayer;
 
@@ -39,6 +40,8 @@ public class PlayerClimbBehavior : MonoBehaviour {
     public bool isClimbing () { return mClimbing; }
     public void setEnabled(bool state) { mEnabled = state; }
     public bool isEnabled() { return mEnabled; }
+
+    public Color _DebugRopeColor;
 
 	// Use this for initialization
 	void Awake () {
@@ -120,6 +123,8 @@ public class PlayerClimbBehavior : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 
+        Debug.DrawLine(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position, _DebugRopeColor);
+
         if (mEnabled && !mReachedTop)
         {
             //Player is waiting to climb -- Increment the timer
@@ -137,10 +142,14 @@ public class PlayerClimbBehavior : MonoBehaviour {
             {
                 mClimbLerpEndPosition = FindClimbPosition();
                 mClimbLerpDistance = Vector3.Distance(mTransform.position, mClimbLerpEndPosition);
-                mClimbLerpStartPosition = mTransform.position;
-                mClimbLerpStart = Time.time;
-                mClimbing = true;
-                ToggleGravity(false);
+                float distanceFromAttachedPlayer = Vector3.Distance(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position);
+                if (mClimbLerpDistance <= _RopeLength + _RopeMargin && distanceFromAttachedPlayer <= _RopeLength + _RopeMargin && !(distanceFromAttachedPlayer >= _RopeLength && AboveAttachedObject()))
+                {
+                    mClimbLerpStartPosition = mTransform.position;
+                    mClimbLerpStart = Time.time;
+                    mClimbing = true;
+                    ToggleGravity(false);
+                }
             }
 
             //Player is Climbing -- Lerp the position between the start and end points
@@ -167,7 +176,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
         {
             /// Anything within this else takes place when the Player is falling ///
 
-            /// //Stop the Player from following through the ground plane
+            //Stop the Player from falling through the ground plane
             if (mTransform.position.y <= mGroundY)
             {
                 ToggleGravity(false);
@@ -176,34 +185,37 @@ public class PlayerClimbBehavior : MonoBehaviour {
                 mFocusedClimbNodeIndex = FindClimbNodeIndex(mFocusedClimbNode);
                 mRigidBody.velocity = Vector3.zero;
             }
-            if (mTransform.position.y < _AttachedPlayer.GetComponent<Transform>().position.y && mRigidBody.velocity.y < 0)
+            float distance = Vector3.Distance(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position);
+            if (mTransform.position.y < _AttachedPlayer.GetComponent<Transform>().position.y && mRigidBody.velocity.y < 0 && distance < _RopeLength)
             {
-                AttachRope();
+                FakeRope();
             }
-
-
          }
 	}
 
-    void AttachRope()
+    void FakeRope()
     {
-        //Debug.Log("ATTACHING A FAKE ROPE");
-        //SpringJoint spring = gameObject.AddComponent<SpringJoint>();
-        //spring.connectedBody = _AttachedPlayer.GetComponent<Rigidbody>();
-        float verticalDistance = mTransform.position.y - _AttachedPlayer.GetComponent<Transform>().position.y;
-        if (verticalDistance >= _RopeLength) 
-        {
-            //Debug.Log("FREEZING POSITION Y");
-            mRigidBody.constraints = RigidbodyConstraints.FreezePositionY;
-        }
+        Vector3 newPos = _AttachedPlayer.GetComponent<Transform>().position;
+        newPos.y -= (_RopeLength - _RopeMargin);
+        if (newPos.y < mGroundY) newPos.y = mGroundY;
+        mTransform.position = newPos;
+        mFocusedClimbNode = FindClosestClimbNode(mTransform.position);
+        mFocusedClimbNodeIndex = FindClimbNodeIndex(mFocusedClimbNode);
+        mRigidBody.velocity = Vector3.zero;
+    }
+
+    bool AboveAttachedObject()
+    {
+        return mTransform.position.y > _AttachedPlayer.GetComponent<Transform>().position.y;    
     }
 
     //Reset the climbing state so when the player 're-attaches' it doesn't jump to the end of the lerp
     public void FreezeClimbing ()
     {
         mClimbing = false;
-        mClimbDelayTimer = 0f;
         mCanClimb = false;
+        mClimbDelayTimer = 0f;
+        mRigidBody.velocity = Vector3.zero;
     }
 
     public void ToggleGravity(bool state)
