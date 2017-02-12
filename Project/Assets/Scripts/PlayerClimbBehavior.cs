@@ -20,12 +20,15 @@ public class PlayerClimbBehavior : MonoBehaviour {
     public float _RopeMargin = 5.0f;
     public KeyCode _ClimbKey;
     public GameObject _AttachedPlayer;
+    public bool _UseArduino=false;
 
     public float _MaxClimbFrequency = 10f;
     public float _FrequencyMod = 0.5f;
     public float _ClimbFrequencyDecayTick = 0.5f; //How often the climb frequncy decays
     public float _ClimbFrequencyDecay = 0.5f; //Decay of climb frequency per tick
     public float _ClimbFrequencyDecayTime = 1f; //Seconds of NO INPUT before climb freq decay
+
+    public float _RecoveryDelay = 3f;
 
     public Sprite _IdleSprite;
     public Sprite _WinSprite;
@@ -38,12 +41,14 @@ public class PlayerClimbBehavior : MonoBehaviour {
     private float mClimbFrequencyDecayTimer = 0f;
 
     private Transform mTransform;
-    private Rigidbody mRigidBody;
+    private Rigidbody2D mRigidBody;
     private bool mCanClimb=true;
     private bool mClimbing = false;
     private bool mEnabled = true;
     private bool mReachedTop=false;
     private float mClimbDelayTimer = 0f;
+
+    private float mRecoveryTimer = 0f;
 
     private float mClimbLerpDistance;
     private float mClimbLerpStart;
@@ -80,7 +85,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
         mGroundY = GameObject.FindGameObjectWithTag("Ground").GetComponent<Transform>().position.y;
         mSpotLightBehavior = gameObject.GetComponent<PlayerSpotLightBehavior>();
         mTransform = gameObject.GetComponent<Transform> ();
-        mRigidBody = gameObject.GetComponent<Rigidbody>();
+        mRigidBody = gameObject.GetComponent<Rigidbody2D>();
         mAnimSprite = mTransform.GetChild(0).GetComponent<SpriteRenderer>();
         mFixedSprite = mTransform.GetChild(1).GetComponent<SpriteRenderer>();
 	}
@@ -174,7 +179,7 @@ public class PlayerClimbBehavior : MonoBehaviour {
 	void Update () {
 
         #region DEBUG
-        if (Input.GetKeyDown(_ClimbKey)) climbTick();
+        if (!_UseArduino && Input.GetKeyDown(_ClimbKey)) climbTick();
 
         if(_AttachedPlayer) Debug.DrawLine(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position, _DebugRopeColor);
 
@@ -293,6 +298,18 @@ public class PlayerClimbBehavior : MonoBehaviour {
         {
             /// Anything within this else takes place when the Player is falling ///
 
+            mRecoveryTimer += Time.deltaTime;
+            if (mRecoveryTimer >= _RecoveryDelay)
+            {
+                FreezeClimbing();
+                ToggleGravity(false);
+                mSpotLightBehavior.AllowClimb();
+                mFocusedClimbNode = FindClosestClimbNode(mTransform.position);
+                mFocusedClimbNodeIndex = FindClimbNodeIndex(mFocusedClimbNode);
+                mRecoveryTimer = 0f;
+                Debug.Log("RESET");
+            }
+
             //Stop the Player from falling through the ground plane
             if (mTransform.position.y <= mGroundY)
             {
@@ -340,7 +357,15 @@ public class PlayerClimbBehavior : MonoBehaviour {
 
     public void ToggleGravity(bool state)
     {
-        mRigidBody.useGravity = state;
+        if (!state)
+        { 
+            mRigidBody.gravityScale = 0;
+            mRigidBody.constraints = RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezePositionY;
+        }
+        else { 
+            mRigidBody.gravityScale = 1;
+            mRigidBody.constraints = RigidbodyConstraints2D.FreezeRotation;
+        }
     }
 
     public void ChangeState(MoveState state)

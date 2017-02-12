@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine;
 
 public class ScoringBehavior : MonoBehaviour {
@@ -11,12 +12,16 @@ public class ScoringBehavior : MonoBehaviour {
     private int mNumPlayersAtTop = 0;
     private GameObject mEndGamePanel;
     private TimingBehavior mTimingBehavior;
+    private bool mGameOver = false;
+    private float mRestartTimer = 0f;
 
     public string _ScorePrefix = "Score: ";
     public string _EndGamePrefix = "YOU REACHED THE TOP IN ";
     public string _EndGameMiddle = " SECONDS AND STOLE ";
     public string _EndGameSuffixSingular = " PAINTING! GOOD JOB!";
     public string _EndGameSuffixPlural = " PAINTINGS! GOOD JOB!";
+
+    public float _RestartDelay = 10f;
 
 	// Use this for initialization
 	void Start () {
@@ -26,6 +31,18 @@ public class ScoringBehavior : MonoBehaviour {
         mNumPlayers = GameObject.FindGameObjectsWithTag("Player").Length;
         mTimingBehavior = FindObjectOfType<TimingBehavior>();
 	}
+
+    void Update()
+    {
+        if (mGameOver)
+        {
+            mRestartTimer += Time.deltaTime;
+            if (mRestartTimer >= _RestartDelay)
+            {
+                SceneManager.LoadScene("Main");
+            }
+        }
+    }
 
     public void IncrementScore(int amount)
     {
@@ -50,6 +67,7 @@ public class ScoringBehavior : MonoBehaviour {
         {
             mTimingBehavior.StopTimer();
             EndGame(mCurrentScore);
+            mGameOver = true;
         }
     }
 }

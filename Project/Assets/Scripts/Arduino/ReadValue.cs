@@ -7,8 +7,8 @@ public class ReadValue : MonoBehaviour {
 	SerialPort sp = new SerialPort("/dev/cu.usbmodemFA131", 9600);
 	
 	void Start () {
-		sp.Open ();
-		sp.ReadTimeout = 10;
+//		sp.Open ();
+//		sp.ReadTimeout = 10;
 	}
 	
 	void Update () 

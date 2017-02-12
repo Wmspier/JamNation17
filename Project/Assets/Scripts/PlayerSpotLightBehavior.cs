@@ -44,7 +44,7 @@ public class PlayerSpotLightBehavior : MonoBehaviour
         {
             //Debug.Log(Vector3.Distance(hit.point, mTransform.position));
 
-            return (Vector3.Distance(hit.point, mTransform.position) <= 6);
+            return (Vector3.Distance(hit.point, mTransform.position) <= 12);
         }
         else return false;
     }
@@ -65,12 +65,12 @@ public class PlayerSpotLightBehavior : MonoBehaviour
 
         if (mAttached)
         {
-            mMeshRenderer.material = _AttachedMaterial;
+            //mMeshRenderer.material = _AttachedMaterial;
             mClimbBehavior.ToggleGravity(false);
         }
         else
         {
-            mMeshRenderer.material = _DetachedMaterial;
+            //mMeshRenderer.material = _DetachedMaterial;
             mClimbBehavior.ToggleGravity(true);
             mClimbBehavior.FreezeClimbing();
             mClimbBehavior.ChangeState(MoveState.FALL);
@@ -81,7 +81,7 @@ public class PlayerSpotLightBehavior : MonoBehaviour
     //Similar to ToggleAttach but explicitly ENABLES
     public void AllowClimb()
     {
-        mMeshRenderer.material = _AttachedMaterial;
+        //mMeshRenderer.material = _AttachedMaterial;
         mClimbBehavior.setEnabled(true);
         mClimbBehavior.ToggleGravity(false);
     }

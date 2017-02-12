@@ -15,7 +15,7 @@ public class NodeData : MonoBehaviour {
     private int mFlashTimer = 0;
     private Transform mTransform;
 
-    private bool mHasPainting = false;
+    public bool mHasPainting = false;
     private bool mOccupied = false;
 
     private ScoringBehavior mScore;
@@ -23,6 +23,7 @@ public class NodeData : MonoBehaviour {
     private Slider mCollectionSlider;
     private GameObject mPainting;
     private MeshRenderer mMeshRenderer;
+    private SoundManager mSoundManager;
 
     void Awake()
     {
@@ -31,10 +32,12 @@ public class NodeData : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
-        if (Random.Range(0, 10) <= (10 * _PaintingSpawnChance) && !_LastNode)
-        {
-            mHasPainting = true;
-        }
+        mSoundManager = GameObject.FindObjectOfType<SoundManager>();
+
+        //if (Random.Range(0, 10) <= (10 * _PaintingSpawnChance) && !_LastNode)
+        //{
+        //    mHasPainting = true;
+        //}
 
         if (mHasPainting)
         {
@@ -52,7 +55,7 @@ public class NodeData : MonoBehaviour {
         mStealingText.enabled = false;
 	}
 
-    void OnTriggerStay(Collider other)
+    void OnTriggerStay2D(Collider2D other)
     {
         if (mHasPainting) 
         {
@@ -71,11 +74,12 @@ public class NodeData : MonoBehaviour {
                 Destroy(mPainting);
                 mHasPainting = false;
                 mStealingText.enabled = false;
+                mSoundManager.PlayStealSound();
             }
         }
     }
 
-    void OnTriggerExit(Collider other)
+    void OnTriggerExit2D(Collider2D other)
     {
         mStealingText.enabled = false;
         if (mHasPainting)
