@@ -2,6 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum MoveState 
+{ 
+    IDLE,
+    CLIMB,
+    FALL,
+    TOTAL
+}
+
 public class PlayerClimbBehavior : MonoBehaviour {
 
 
@@ -12,6 +20,22 @@ public class PlayerClimbBehavior : MonoBehaviour {
     public float _RopeMargin = 5.0f;
     public KeyCode _ClimbKey;
     public GameObject _AttachedPlayer;
+
+    public float _MaxClimbFrequency = 10f;
+    public float _FrequencyMod = 0.5f;
+    public float _ClimbFrequencyDecayTick = 0.5f; //How often the climb frequncy decays
+    public float _ClimbFrequencyDecay = 0.5f; //Decay of climb frequency per tick
+    public float _ClimbFrequencyDecayTime = 1f; //Seconds of NO INPUT before climb freq decay
+
+    public Sprite _IdleSprite;
+    public Sprite _WinSprite;
+    public Sprite _FallSprite;
+
+    private bool mClimbFrequencyDecay = false;
+
+    private float mClimbFrequency=0f;
+    private float mClimbFrequencyDecayTickTimer = 0f;
+    private float mClimbFrequencyDecayTimer = 0f;
 
     private Transform mTransform;
     private Rigidbody mRigidBody;
@@ -35,11 +59,18 @@ public class PlayerClimbBehavior : MonoBehaviour {
 
     private PlayerSpotLightBehavior mSpotLightBehavior;
     private ScoringBehavior mScoringBehavior;
+    private StateMachineBehaviour mAnimationStateMachine;
+
+    private SpriteRenderer mAnimSprite;
+    private SpriteRenderer mFixedSprite;
+
+    private bool mClimbTick=false;
 
     //Getters/Setters
     public bool isClimbing () { return mClimbing; }
     public void setEnabled(bool state) { mEnabled = state; }
     public bool isEnabled() { return mEnabled; }
+    public void climbTick() { mClimbTick = true; }
 
     public Color _DebugRopeColor;
 
@@ -50,6 +81,8 @@ public class PlayerClimbBehavior : MonoBehaviour {
         mSpotLightBehavior = gameObject.GetComponent<PlayerSpotLightBehavior>();
         mTransform = gameObject.GetComponent<Transform> ();
         mRigidBody = gameObject.GetComponent<Rigidbody>();
+        mAnimSprite = mTransform.GetChild(0).GetComponent<SpriteRenderer>();
+        mFixedSprite = mTransform.GetChild(1).GetComponent<SpriteRenderer>();
 	}
 
     void Start()
@@ -62,7 +95,16 @@ public class PlayerClimbBehavior : MonoBehaviour {
     {
         Transform nodeList = GameObject.FindGameObjectWithTag("ClimbingNodes").GetComponent<Transform>();
         mClimbNodeList = new GameObject[nodeList.childCount];
-        mTotalClimbNodes = nodeList.childCount-1;
+        mTotalClimbNodes = nodeList.childCount - 1;
+        //GameObject child = nodeList.GetChild(0).gameObject;
+        //int childIncrement = 0;
+        //while (child.GetComponent<Transform>().childCount > 0)
+        //{
+        //    mClimbNodeList.Add(child);
+        //    childIncrement++;
+        //    child = child.GetComponent<Transform>().GetChild(0).gameObject;
+        //}
+        //mTotalClimbNodes = childIncrement;
         for (int i = 0; i < nodeList.childCount; i++)
         {
             mClimbNodeList[i] = nodeList.GetChild(i).gameObject;
@@ -120,13 +162,57 @@ public class PlayerClimbBehavior : MonoBehaviour {
         return closestNode;
     }
 
+    void UpdateClimbFrequency()
+    {
+        if (mClimbFrequency + _FrequencyMod <= _MaxClimbFrequency)
+        {
+            mClimbFrequency += _FrequencyMod;
+        }
+    }
+
 	// Update is called once per frame
 	void Update () {
 
-        Debug.DrawLine(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position, _DebugRopeColor);
+        #region DEBUG
+        if (Input.GetKeyDown(_ClimbKey)) climbTick();
+
+        if(_AttachedPlayer) Debug.DrawLine(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position, _DebugRopeColor);
+
+        #endregion
 
         if (mEnabled && !mReachedTop)
         {
+            #region TIMERS
+            //Time before climb frequency beginds to decay
+            mClimbFrequencyDecayTimer += Time.deltaTime;
+            if (mClimbFrequencyDecayTimer >= _ClimbFrequencyDecayTime)
+            {
+                mClimbFrequencyDecay = true;
+            }
+
+            //Climb frequency is decaying
+            if (mClimbFrequencyDecay && mCanClimb) 
+            {
+                mClimbFrequencyDecayTickTimer += Time.deltaTime;
+
+                //Climb Decay Tick
+                if (mClimbFrequencyDecayTickTimer >= _ClimbFrequencyDecayTick)
+                {
+                    mClimbFrequency -= _ClimbFrequencyDecay;
+                    if (mClimbFrequency < 0) mClimbFrequency = 0;
+                    mClimbFrequencyDecayTickTimer = 0f;
+
+                    //_LerpSpeed = mClimbFrequency;
+                    if (mClimbing)
+                    {
+                        mClimbLerpStart = Time.time;
+                        mClimbLerpStartPosition = mTransform.position;
+                        mClimbLerpDistance = Vector3.Distance(mTransform.position, mClimbLerpEndPosition);
+                    }
+                }
+
+            }
+
             //Player is waiting to climb -- Increment the timer
             if (!mCanClimb)
             {
@@ -136,19 +222,40 @@ public class PlayerClimbBehavior : MonoBehaviour {
                     mCanClimb = true;
                 }
             }
+            #endregion
 
-            //Climb input is held and the play can climb --- Set the end position and begin the Lerp Timer
-            if (Input.GetKey(_ClimbKey) && mCanClimb && !mClimbing)
+            if (mClimbTick && mCanClimb)
+            {
+                mClimbTick = false;
+                UpdateClimbFrequency();
+
+
+                //_LerpSpeed = mClimbFrequency;
+                if (mClimbing)
+                {
+                    mClimbLerpStart = Time.time;
+                    mClimbLerpStartPosition = mTransform.position;
+                    mClimbLerpDistance = Vector3.Distance(mTransform.position, mClimbLerpEndPosition);
+
+                }
+            }
+
+
+            //Climb input is held and the player can climb --- Set the end position and begin the Lerp Timer
+            if (mClimbFrequency>0 && !mClimbing)
             {
                 mClimbLerpEndPosition = FindClimbPosition();
                 mClimbLerpDistance = Vector3.Distance(mTransform.position, mClimbLerpEndPosition);
-                float distanceFromAttachedPlayer = Vector3.Distance(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position);
-                if (mClimbLerpDistance <= _RopeLength + _RopeMargin && distanceFromAttachedPlayer <= _RopeLength + _RopeMargin && !(distanceFromAttachedPlayer >= _RopeLength && AboveAttachedObject()))
+                float distanceFromAttachedPlayer=0;
+                if(_AttachedPlayer) distanceFromAttachedPlayer = Vector3.Distance(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position);
+                if ((mClimbLerpDistance <= _RopeLength + _RopeMargin && distanceFromAttachedPlayer <= _RopeLength + _RopeMargin && !(distanceFromAttachedPlayer >= _RopeLength && AboveAttachedObject())) || _AttachedPlayer == null)
                 {
                     mClimbLerpStartPosition = mTransform.position;
                     mClimbLerpStart = Time.time;
                     mClimbing = true;
+                    mCanClimb = false;
                     ToggleGravity(false);
+                    ChangeState(MoveState.CLIMB);
                 }
             }
 
@@ -156,16 +263,26 @@ public class PlayerClimbBehavior : MonoBehaviour {
             if (mClimbing)
             {
                 float distCovered = (Time.time - mClimbLerpStart) * _LerpSpeed;
+                //float distCovered = (Time.time - mClimbLerpStart) * mClimbFrequency;
                 float fracClimb = distCovered / mClimbLerpDistance;
                 mTransform.position = Vector3.Lerp(mClimbLerpStartPosition, mClimbLerpEndPosition, fracClimb);
+
+                //Vector3 direction = (mFocusedClimbNode.GetComponent<Transform>().position - mTransform.position).normalized;
+                //Quaternion lookRotation = Quaternion.LookRotation(direction);
+                //mTransform.rotation = lookRotation;
+                //mTransform.LookAt(mFocusedClimbNode.GetComponent<Transform>().position);
+                //Quaternion rotation = mTransform.rotation;
+                //rotation.x = 0;
+                //mTransform.rotation = rotation;
 
                 //Player has reached climb destination
                 if (fracClimb >= 1.0)
                 {
                     mClimbing = false;
                     mClimbDelayTimer = 0f;
-                    mCanClimb = false;
                     mFocusedClimbNode = FindNextClimbNode();
+                    mClimbFrequency = 0;
+                    ChangeState(MoveState.IDLE);
                 }
             }
 
@@ -185,10 +302,13 @@ public class PlayerClimbBehavior : MonoBehaviour {
                 mFocusedClimbNodeIndex = FindClimbNodeIndex(mFocusedClimbNode);
                 mRigidBody.velocity = Vector3.zero;
             }
-            float distance = Vector3.Distance(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position);
-            if (mTransform.position.y < _AttachedPlayer.GetComponent<Transform>().position.y && mRigidBody.velocity.y < 0 && distance < _RopeLength)
-            {
-                FakeRope();
+            if (_AttachedPlayer)
+            { 
+                float distance = Vector3.Distance(mTransform.position, _AttachedPlayer.GetComponent<Transform>().position);
+                if (mTransform.position.y < _AttachedPlayer.GetComponent<Transform>().position.y && mRigidBody.velocity.y < 0 && distance < _RopeLength)
+                {
+                    FakeRope();
+                }
             }
          }
 	}
@@ -221,5 +341,28 @@ public class PlayerClimbBehavior : MonoBehaviour {
     public void ToggleGravity(bool state)
     {
         mRigidBody.useGravity = state;
+    }
+
+    public void ChangeState(MoveState state)
+    {
+        switch (state)
+        {
+            case MoveState.FALL:
+                mAnimSprite.enabled = false;
+                mFixedSprite.enabled = true;
+                mFixedSprite.sprite = _FallSprite;
+                break;
+            case MoveState.IDLE:
+                mAnimSprite.enabled = false;
+                mFixedSprite.enabled = true;
+                mFixedSprite.sprite = _IdleSprite;
+                break;
+            case MoveState.CLIMB:
+                mAnimSprite.enabled = true;
+                mFixedSprite.enabled = false;
+                break;
+            default:
+                break;
+        }
     }
 }

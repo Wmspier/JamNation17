@@ -70,10 +70,10 @@ public class PlayerSpotLightBehavior : MonoBehaviour
         }
         else
         {
-            Debug.Log("IT HAPPENED");
             mMeshRenderer.material = _DetachedMaterial;
             mClimbBehavior.ToggleGravity(true);
             mClimbBehavior.FreezeClimbing();
+            mClimbBehavior.ChangeState(MoveState.FALL);
         }
         mClimbBehavior.setEnabled(mAttached);
     }

@@ -4,7 +4,7 @@ using System.IO.Ports;
 
 
 public class ReadValue : MonoBehaviour {
-	SerialPort sp = new SerialPort("COM4", 9600);
+	SerialPort sp = new SerialPort("/dev/cu.usbmodemFA131", 9600);
 	
 	void Start () {
 		sp.Open ();
@@ -14,7 +14,15 @@ public class ReadValue : MonoBehaviour {
 	void Update () 
 	{
 		try{
-			print (sp.ReadLine());
+            string readValue = sp.ReadLine();
+            if (readValue.Contains("P1:0"))
+            {
+                //Trigger something
+                this.GetComponent<PlayerClimbBehavior>().climbTick();
+               // print("OK");
+
+            }
+			//print (readValue);
 		}
 		catch(System.Exception){
 		}
